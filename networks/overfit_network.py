@@ -58,12 +58,19 @@ class OverfitNN(nn.Module):
         self.upscaler1 = nn.Sequential(
             nn.ConvTranspose2d(hp["interface"], hp["nupscaler"], 2, 2),
             nn.LeakyReLU(),
+
+
+        )
+        
+        self.upscaler2 = nn.Sequential(
             nn.Conv2d(hp["nupscaler"], hp["nupscaler"], 1, 1, padding="same"),
             nn.LeakyReLU(),
-            nn.Conv2d(hp["nupscaler"], hp["nupscaler"], 1, 1),
+            nn.Conv2d(hp["nupscaler"], hp["nupscaler"], 1, 1, padding = "same"),
             nn.LeakyReLU(),
-            nn.Conv2d(hp["nupscaler"], 3, 1, 1)
-
+        )
+        
+        self.upscaler3 = nn.Sequential(
+            nn.Conv2d(2 * hp["nupscaler"], 3, 1, 1)
         )
 
         
@@ -83,7 +90,11 @@ class OverfitNN(nn.Module):
         decoding2 = self.decoder2.forward(decoder2_input)
         decoding1 = self.decoder1.forward(torch.cat([decoding2, encoding1], dim=-3))
         
-        y = self.upscaler1(decoding1)
+        upscaler1_output = self.upscaler1.forward(decoding1)
+        upscaler2_output = self.upscaler2.forward(upscaler1_output)
+        #print(upscaler1_output.shape)
+        #print(upscaler2_output.shape)
+        y = self.upscaler3.forward(torch.cat([upscaler1_output, upscaler2_output], dim = -3))
         
         #print(upscaler1_output.shape)
         #print(decoding1.shape)

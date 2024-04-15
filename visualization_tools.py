@@ -18,34 +18,36 @@ def random_image_slice(image, size=100):
 def crop(image, area):
     return image[area[0]:area[1], area[2]:area[3], :]
 
-def crop_gpu(image, area):
+def crop_tensor(image, area):
     return image[:, area[2]:area[3], area[0]:area[1]]
 
-def plot_upscaling(image, model):
+def plot_upscaling(pair, model):
+    down_image, target = pair
+    model.to("cpu")
     rows = 6
     fig, axes = plt.subplots(rows, 6, figsize=(12, 3))
     fig.set_size_inches(15, 15)
-
-    image = image.to("cuda")
-    down_image = f.interpolate(image, scale_factor=(.5,.5), mode="bilinear", antialias=True)
+    down_image = down_image.unsqueeze(0)
     up_image = f.interpolate(down_image, scale_factor=(2,2), mode="bilinear").squeeze(0)
     down_image = down_image.squeeze(0)
-    target = ((image - up_image)*10).squeeze(0)
-    image = image.squeeze(0)
+    image = (up_image + .5 * target).squeeze(0)
     prediction_unprocessed = model.forward(down_image).detach()
-    prediction = (model.forward(down_image) / 10 + up_image).detach()
-    target_cpu = target.cpu().permute(1,2,0)
+    if len(prediction_unprocessed.shape) == 4:
+        prediction_unprocessed = prediction_unprocessed.squeeze(0)
+    
+    prediction = up_image + prediction_unprocessed / 2
+
 
     for i in range(rows):
         area = random_image_slice(image)
         area_l = area_half_size(area)
     
-        image1 = crop_gpu(down_image, area_l).cpu().permute(1,2,0)
-        image2 = crop_gpu(up_image, area).cpu().permute(1,2,0)
-        image3 = crop_gpu(prediction, area).cpu().permute(1,2,0)
-        image4 = crop_gpu(image, area).cpu().permute(1,2,0)
-        image5 = crop_gpu(prediction_unprocessed, area).cpu().permute(1,2,0)
-        image6 = crop_gpu(target, area).cpu().permute(1,2,0)
+        image1 = crop_tensor(down_image, area_l).cpu().permute(1,2,0)
+        image2 = crop_tensor(up_image, area).cpu().permute(1,2,0)
+        image3 = crop_tensor(prediction, area).cpu().permute(1,2,0)
+        image4 = crop_tensor(image, area).cpu().permute(1,2,0)
+        image5 = crop_tensor(prediction_unprocessed, area).cpu().permute(1,2,0) + .5
+        image6 = crop_tensor(target, area).cpu().permute(1,2,0) + .5
     
         axes[i, 0].imshow(image1)
         axes[0, 0].set_title('')
@@ -72,3 +74,5 @@ def plot_upscaling(image, model):
     del target
     del prediction_unprocessed
     del prediction
+
+
