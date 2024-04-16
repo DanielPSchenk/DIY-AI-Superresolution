@@ -36,7 +36,7 @@ class UNetBackbone(nn.Module):
         decoding1 = self.decoder1.forward(torch.cat([decoding2, encoding1], dim=-3))
         return decoding1
 
-class UpscalerResNet(nn.Module):
+class UpscalerResNetLarge(nn.Module):
     def __init__(self, hp):
         super().__init__()
         self.pretrained_classifier_backbone = torch.nn.Sequential(*(list(resnet34(pretrained=True).children())[:-1]))
@@ -44,10 +44,16 @@ class UpscalerResNet(nn.Module):
         weights = ResNet34_Weights.DEFAULT
         self.preprocess = weights.transforms()
         
+        
+        
         self.upscaler = nn.Sequential(
-            nn.ConvTranspose2d(hp["interface"] + 128, hp["nupscaler"], 2, 2),
+            nn.ConvTranspose2d(hp["interface"] + 256, hp["nupscaler"], 2, 2),
             nn.LeakyReLU(),
-            nn.Conv2d(hp["nupscaler"], 3, 3, padding="same")
+            nn.Conv2d(hp["nupscaler"], hp["nupscaler"], 3, padding="same"),
+            nn.LeakyReLU(),
+            nn.Conv2d(hp["nupscaler"], hp["nupscaler"], 3, padding="same"),
+            nn.LeakyReLU(),
+            nn.Conv2d(hp["nupscaler"], 3, 1)
         )
         
     def forward(self, x):
@@ -63,9 +69,9 @@ class UpscalerResNet(nn.Module):
         
         upscaled_classifier = f.interpolate(classifier_output, (ushape[-2], ushape[-1]), mode="bilinear")
         
-        #print(upscaled_classifier.shape)
+        
         
         upscaler_input = torch.cat([upscaled_classifier, unet_output], dim=-3)
-        
+        #print(upscaler_input.shape)
         y = self.upscaler.forward(upscaler_input)
         return y
