@@ -10,7 +10,8 @@ class ResBlock(nn.Module):
         self.network = nn.Sequential(
             nn.Conv2d(channels, channels, 3, padding="same"),
             nn.LeakyReLU(),
-            nn.Conv2d(channels, channels, 3, padding="same")
+            nn.Conv2d(channels, channels, 3, padding="same"),
+            nn.BatchNorm2d(channels)
         )
         
     def forward(self, x):

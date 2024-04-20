@@ -2,22 +2,25 @@ import gc
 from tqdm import tqdm
 import torch
 from torch.nn import L1Loss
+import numpy as np
 
 #optimizer.lr=1e-3
 def train(model, optimizer, epochs, train_loader, val_loader, train_losses, val_losses, device="cuda", loss_func = L1Loss()):
     model.to(device)
-    
+    gc.collect()
+    torch.cuda.empty_cache()
     
     for epoch in range(epochs):
         bar = tqdm(zip(range(len(train_loader)), train_loader), total=len(train_loader), desc="train {:0>5}".format(epoch + 1), ncols=100)
         train_loss_sum = 0
         val_loss_sum = 0
+        model.to(device)
         for i, batch in bar:
             down_image, target = batch
             
         
             #down_image = f.interpolate(gpu_batch, scale_factor=(.5, .5), mode="bilinear", antialias=True)
-            with torch.amp.autocast(device_type="cuda", dtype=torch.float16):
+            with torch.amp.autocast(device_type="cuda", dtype=torch.float32):
                 model.train()
                 down_image = down_image.to(device)
                 model.zero_grad()

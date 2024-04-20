@@ -2,6 +2,7 @@ import random
 import warnings
 import matplotlib.pyplot as plt
 import torch.nn.functional as f
+import numpy as np
 
 def area_half_size(area, scale = 2):
     u, v, w, x = area
@@ -29,11 +30,11 @@ def plot_upscaling(pair, model):
     fig.set_size_inches(15, 15)
     down_image = down_image.unsqueeze(0)
     up_image = f.interpolate(down_image, scale_factor=(2,2), mode="bilinear").squeeze(0)
-    down_image = down_image.squeeze(0)
     image = (up_image + .5 * target).squeeze(0)
     prediction_unprocessed = model.forward(down_image).detach()
     if len(prediction_unprocessed.shape) == 4:
         prediction_unprocessed = prediction_unprocessed.squeeze(0)
+    down_image = down_image.squeeze(0)
     
     prediction = up_image + prediction_unprocessed / 2
 
@@ -74,5 +75,19 @@ def plot_upscaling(pair, model):
     del target
     del prediction_unprocessed
     del prediction
+    
+def plot_loss_curves(train_losses, val_losses):
+    #black_loss = loss_func(torch.zeros(target.shape).to(device), target)
+    #black_loss_value = black_loss.item()
+    plt.plot(np.linspace(1, len(train_losses), len(train_losses)), train_losses)
+    plt.plot(np.linspace(1, len(val_losses), len(val_losses)), val_losses)
+    #plt.plot((0, len(losses)), (black_loss_value, black_loss_value))
+    #plt.plot(np.linspace(1, len(val_losses), len(val_losses)), val_losses)
+    plt.yscale("log")
+    plt.show()
+
+    plt.plot(np.linspace(1, len(train_losses), len(train_losses)), train_losses)
+    plt.plot(np.linspace(1, len(val_losses), len(val_losses)), val_losses)
+    plt.show()
 
 

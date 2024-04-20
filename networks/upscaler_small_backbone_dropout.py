@@ -5,10 +5,11 @@ from torchvision.models import ResNet34_Weights, resnet34
 
 
 class ResBlock(nn.Module):
-    def __init__(self, channels) -> None:
+    def __init__(self, channels, dropout=.5) -> None:
         super().__init__()
         self.network = nn.Sequential(
             nn.Conv2d(channels, channels, 3, padding="same"),
+            nn.Dropout2d(dropout),
             nn.LeakyReLU(),
             nn.Conv2d(channels, channels, 3, padding="same")
         )
