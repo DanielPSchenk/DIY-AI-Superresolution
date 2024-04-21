@@ -66,7 +66,11 @@ class UpscalerResNet(nn.Module):
         self.resnet_preprocess = weights.transforms()
         layer_dim = hp["layer_dim"]
         
-        classifier_list = list(resnet34(pretrained=True).children())
+        classifier_list = list(resnet34(pretrained=True).children())[:hp["depth"]]
+        
+        for classifier in classifier_list:
+            for param in classifier.parameters():
+                param.requires_grad = False
         
         self.pretrained_classifier_layers = [classifier_list[i] for i in range(0, len(classifier_list)-1)]
         for cl, i in zip(self.pretrained_classifier_layers, range(len(self.pretrained_classifier_layers))):
@@ -85,7 +89,7 @@ class UpscalerResNet(nn.Module):
         for db, i in zip(self.decoder_blocks, range(len(self.decoder_blocks))):
             self.add_module("db_" + str(i), db)
         
-        self.upscaler = nn.Sequential(ResNet({"backbone_dimension" : layer_dim[0] + 3, "num_blocks" : 1}), nn.Conv2d(layer_dim[0] + 3, 3, 1))
+        self.upscaler = nn.Sequential(nn.Conv2d(layer_dim[0] + 3, hp["backbone_dimension"], 1), nn.LeakyReLU(), ResNet({"backbone_dimension" : hp["backbone_dimension"], "num_blocks" : 1}), nn.Conv2d(hp["backbone_dimension"], 3, 1))
         self.add_module("up", self.upscaler)
         
     def parameter_report(self):

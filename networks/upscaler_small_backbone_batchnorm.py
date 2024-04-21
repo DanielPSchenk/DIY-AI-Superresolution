@@ -67,7 +67,8 @@ class UpscalerResNet(nn.Module):
         self.resnet_preprocess = weights.transforms()
         layer_dim = hp["layer_dim"]
         
-        classifier_list = list(resnet34(pretrained=True).children())
+        classifier_list = list(resnet34(pretrained=True).children())[:hp["depth"]]
+
         
         self.pretrained_classifier_layers = [classifier_list[i] for i in range(0, len(classifier_list)-1)]
         for cl, i in zip(self.pretrained_classifier_layers, range(len(self.pretrained_classifier_layers))):

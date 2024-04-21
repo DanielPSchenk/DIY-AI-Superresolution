@@ -79,15 +79,40 @@ def plot_upscaling(pair, model):
 def plot_loss_curves(train_losses, val_losses):
     #black_loss = loss_func(torch.zeros(target.shape).to(device), target)
     #black_loss_value = black_loss.item()
-    plt.plot(np.linspace(1, len(train_losses), len(train_losses)), train_losses)
-    plt.plot(np.linspace(1, len(val_losses), len(val_losses)), val_losses)
+    plt.plot(np.linspace(0, 1, len(train_losses)), train_losses)
+    plt.plot(np.linspace(0, 1, len(val_losses)), val_losses)
     #plt.plot((0, len(losses)), (black_loss_value, black_loss_value))
     #plt.plot(np.linspace(1, len(val_losses), len(val_losses)), val_losses)
     plt.yscale("log")
     plt.show()
 
-    plt.plot(np.linspace(1, len(train_losses), len(train_losses)), train_losses)
-    plt.plot(np.linspace(1, len(val_losses), len(val_losses)), val_losses)
+    plt.plot(np.linspace(0, 1, len(train_losses)), train_losses)
+    plt.plot(np.linspace(0, 1, len(val_losses)), val_losses)
     plt.show()
+    
+def show_multi_resolution(pair, model):
+    down_image, target = pair
+    down_image = f.interpolate(down_image.unsqueeze(0), scale_factor=1)
+    model.eval()
+    prediction_1 = model.forward(down_image).detach()
+    up_1 = f.interpolate(down_image, scale_factor=2, mode="bilinear")
+    
+    image_1 = up_1 + .5 * prediction_1
+    up_2 = f.interpolate(image_1, scale_factor=2, mode="bilinear")
+    prediction_2 = model.forward(image_1).detach()
+    image_2 = up_2 + prediction_2 * .5
+    
+    plt_down_image = down_image.cpu().squeeze(0).permute(1,2,0)
+    plt_image1 = image_1.cpu().squeeze(0).permute(1,2,0)
+    plt_image2 = image_2.cpu().squeeze(0).permute(1,2,0)
+    
+    fig, ax = plt.subplots(1, 3, figsize=(24, 12))
+    
+    ax[0].imshow(plt_down_image)
+    ax[1].imshow(plt_image1)
+    ax[2].imshow(plt_image2)
+    
+    plt.imsave("upscaled.png", np.maximum(np.minimum(plt_image2.numpy(), 1), 0))
+    
 
 
