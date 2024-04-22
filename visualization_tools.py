@@ -25,8 +25,8 @@ def crop_tensor(image, area):
 def plot_upscaling(pair, model):
     down_image, target = pair
     model.to("cpu")
-    rows = 6
-    fig, axes = plt.subplots(rows, 6, figsize=(12, 3))
+    rows = 2
+    fig, axes = plt.subplots(rows, 6)
     fig.set_size_inches(15, 15)
     down_image = down_image.unsqueeze(0)
     up_image = f.interpolate(down_image, scale_factor=(2,2), mode="bilinear").squeeze(0)
@@ -54,7 +54,7 @@ def plot_upscaling(pair, model):
         axes[0, 0].set_title('')
 
         axes[i, 1].imshow(image2)
-        axes[0, 1].set_title('blurry upscale')
+        axes[0, 1].set_title('bilinear')
 
         axes[i, 2].imshow(image3)
         axes[0, 2].set_title('prediction')

@@ -13,3 +13,5 @@ data/valued/*.svg
 data/valued/*.gif
 data/valued/*.jpeg
 data/valued/downloaded/**
+data/quality_birds
+data/perspective
