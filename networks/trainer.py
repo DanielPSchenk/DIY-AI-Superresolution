@@ -18,13 +18,15 @@ def train(model, optimizer, epochs, train_loader, val_loader, train_losses, val_
         model.to(device)
         for i, batch in bar:
             down_image, target = batch
-            
+            gc.collect()
+            torch.cuda.empty_cache()
         
             #down_image = f.interpolate(gpu_batch, scale_factor=(.5, .5), mode="bilinear", antialias=True)
             with torch.amp.autocast(device_type="cuda", dtype=torch.float32):
                 model.train()
                 down_image = down_image.to(device)
                 model.zero_grad()
+                loss_func.zero_grad()
                 prediction = model.forward(down_image)
         
 
@@ -90,7 +92,8 @@ def train_feature_reconstruction(model, optimizer, epochs, train_loader, val_loa
         model.to(device)
         for i, batch in bar:
             down_image, target = batch
-            
+            gc.collect()
+            torch.cuda.empty_cache()
         
             #down_image = f.interpolate(gpu_batch, scale_factor=(.5, .5), mode="bilinear", antialias=True)
             with torch.amp.autocast(device_type="cuda", dtype=torch.float32):
@@ -109,7 +112,7 @@ def train_feature_reconstruction(model, optimizer, epochs, train_loader, val_loa
                 del prediction
                 loss.backward()
                 train_loss_sum += loss.item()
-                torch.nn.utils.clip_grad_norm_(model.parameters(), .01)
+                torch.nn.utils.clip_grad_norm_(model.parameters(), .0001)
                 optimizer.step()
             bar.set_postfix(loss = "{:.8f}".format(train_loss_sum / (i + 1)))
             if int(i + 1) % train_loss_interval == 0:
@@ -124,6 +127,8 @@ def train_feature_reconstruction(model, optimizer, epochs, train_loader, val_loa
         model.eval()
         bar = tqdm(zip(range(len(val_loader)), val_loader), total=len(val_loader), desc="val {:0>5}".format(epoch + 1), ncols=100)
         for i, batch in bar:
+            gc.collect()
+            torch.cuda.empty_cache()
             down_image, target = batch
             #down_image = f.interpolate(gpu_batch, scale_factor=(.5, .5), mode="bilinear", antialias=True)
             with torch.amp.autocast(device_type="cuda", dtype=torch.float16):
@@ -137,9 +142,12 @@ def train_feature_reconstruction(model, optimizer, epochs, train_loader, val_loa
                 val_loss_sum += loss.item()
         
                 bar.set_postfix(loss = "{:.8f}".format(val_loss_sum / (i+ 1)))
-                val_losses.append(val_loss_sum / (i+ 1))
+                if int(i + 1) % val_loss_interval == 0:
+                    val_losses.append(val_loss_sum / (i+ 1))
         
                 #del gpu_batch
                 del target
                 del prediction
+        gc.collect()
+        torch.cuda.empty_cache()
         #val_losses.append(val_loss_sum /np.max([len(val_loader), 1]))

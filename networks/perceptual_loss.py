@@ -8,7 +8,7 @@ import torch.nn.functional as f
 # Using the first 5 layers of resnet18
 
 class ShortenedResnet(nn.Module):
-    def __init__(self, requires_grad = True, depth = 2):
+    def __init__(self, requires_grad = True, depth = 6):
         super().__init__()
         self.classifier_list = list(resnet18(pretrained=True).children())[:depth]
    
@@ -48,23 +48,31 @@ class FeatureReconstructionLoss(nn.Module):
 class StyleReconstructionLoss(nn.Module):
     def __init__(self):
         super().__init__()
-        self.target_net = ShortenedResnet(False)
-        self.prediction_net = ShortenedResnet()
-        self.loss = L1Loss()
+        self.target_net1 = ShortenedResnet(False, 6)
+        self.target_net2 = ShortenedResnet(False, 3)
+        self.prediction_net1 = ShortenedResnet(depth=6)
+        self.prediction_net2 = ShortenedResnet(depth=3)
+        self.loss1 = L1Loss()
+        self.loss2 = L1Loss()
         self.direct_loss = L1Loss()
         
     def forward(self, prediction, target, down_image):
         up_image = f.interpolate(down_image, (prediction.shape[-2], prediction.shape[-1]), mode="bilinear", antialias=True)
-        target_image = up_image + .5 * target
-        prediction_image = up_image + .5 * prediction
-        target_out = self.target_net.forward(target_image)
-        prediction_out = self.prediction_net.forward(prediction_image)
+        prediction_image = up_image + prediction
+        l1 = self.direct_loss.forward(prediction_image, target)
+        del up_image
+        target1_out = self.target_net1.forward(target)
+        prediction1_out = self.prediction_net1.forward(prediction_image)
+        loss6 = self.loss1.forward(prediction1_out, target1_out)
+        del target1_out
+        del prediction1_out
         
-        target_shape = target_out.shape
-        divisor = 1# target_shape[-1] * target_shape[-2] * target_shape[-3]
+        target2_out = self.target_net2.forward(target)
+        prediction2_out = self.prediction_net2.forward(prediction_image)
+        loss3 = self.loss2.forward(prediction2_out, target2_out)
+        del target2_out
+        del prediction2_out
         
-        loss = self.loss.forward(prediction_out, target_out) / divisor
-        l1 = self.direct_loss.forward(prediction, target)
-        return loss + .01 * l1
+        return loss6 + loss3 + .01 * l1
         
         

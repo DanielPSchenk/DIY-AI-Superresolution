@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as f
-from torchvision.models import ResNet34_Weights, resnet34
+from torchvision.models import ResNet18_Weights, resnet18
 
 
 class ResBlock(nn.Module):
@@ -63,11 +63,11 @@ class UpscalerResNet(nn.Module):
     def __init__(self, hp):
         super().__init__()
                
-        weights = ResNet34_Weights.DEFAULT
+        weights = ResNet18_Weights.DEFAULT
         self.resnet_preprocess = weights.transforms()
         layer_dim = hp["layer_dim"]
         
-        classifier_list = list(resnet34(pretrained=True).children())[:hp["depth"]]
+        classifier_list = list(resnet18(pretrained=True).children())[:hp["depth"]]
         
         
         self.pretrained_classifier_layers = [classifier_list[i] for i in range(0, len(classifier_list)-1)]

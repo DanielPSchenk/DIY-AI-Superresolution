@@ -32,7 +32,7 @@ class RandomPartSelector(transforms.Transform):
         del crop
         down_image = f.interpolate(rescaled_crop, scale_factor=(.5, .5), mode="bilinear", antialias=True)
         
-        target = (rescaled_crop - f.interpolate(down_image, scale_factor=(2, 2), mode="bilinear")) * self.multiplier
+        target = rescaled_crop#(rescaled_crop - f.interpolate(down_image, scale_factor=(2, 2), mode="bilinear")) * self.multiplier
         
         
         return (down_image.squeeze(0), target.squeeze(0))

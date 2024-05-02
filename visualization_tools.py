@@ -22,25 +22,26 @@ def crop(image, area):
 def crop_tensor(image, area):
     return image[:, area[2]:area[3], area[0]:area[1]]
 
-def plot_upscaling(pair, model):
+def plot_upscaling(pair, model, size=100):
     down_image, target = pair
     model.to("cpu")
     rows = 2
     fig, axes = plt.subplots(rows, 6)
-    fig.set_size_inches(15, 15)
+    fig.set_size_inches(30, 6)
     down_image = down_image.unsqueeze(0)
     up_image = f.interpolate(down_image, scale_factor=(2,2), mode="bilinear").squeeze(0)
-    image = (up_image + .5 * target).squeeze(0)
+    image = target
     prediction_unprocessed = model.forward(down_image).detach()
     if len(prediction_unprocessed.shape) == 4:
         prediction_unprocessed = prediction_unprocessed.squeeze(0)
     down_image = down_image.squeeze(0)
+    target = target - up_image
     
-    prediction = up_image + prediction_unprocessed / 2
+    prediction = up_image + prediction_unprocessed
 
 
     for i in range(rows):
-        area = random_image_slice(image)
+        area = random_image_slice(image, size)
         area_l = area_half_size(area)
     
         image1 = crop_tensor(down_image, area_l).cpu().permute(1,2,0)
@@ -91,6 +92,7 @@ def plot_loss_curves(train_losses, val_losses):
     plt.show()
     
 def show_multi_resolution(pair, model):
+    model.eval()
     down_image, target = pair
     down_image = f.interpolate(down_image.unsqueeze(0), scale_factor=1)
     model.eval()
@@ -109,8 +111,12 @@ def show_multi_resolution(pair, model):
     fig, ax = plt.subplots(1, 3, figsize=(24, 12))
     
     ax[0].imshow(plt_down_image)
-    ax[1].imshow(plt_image1)
-    ax[2].imshow(plt_image2)
+    ax[2].imshow(plt_image1)
+    ax[1].imshow(up_1.cpu().squeeze(0).permute(1,2,0))
+    
+    ax[0].set_title("original")
+    ax[1].set_title("bilinear interpolation")
+    ax[2].set_title("upscaled with deep learning")
     
     plt.imsave("upscaled.png", np.maximum(np.minimum(plt_image2.numpy(), 1), 0))
     
