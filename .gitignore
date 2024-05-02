@@ -15,3 +15,6 @@ data/valued/*.jpeg
 data/valued/downloaded/**
 data/quality_birds
 data/perspective
+
+
+__pycache__/**
